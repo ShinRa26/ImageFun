@@ -1,0 +1,5 @@
+/home/group/personal/csharp/ImageFun/ImageFun/obj/x86/Debug/.NETFramework,Version=v4.5.AssemblyAttribute.cs
+/home/group/personal/csharp/ImageFun/ImageFun/bin/Debug/ImageFun.exe.mdb
+/home/group/personal/csharp/ImageFun/ImageFun/bin/Debug/ImageFun.exe
+/home/group/personal/csharp/ImageFun/ImageFun/obj/x86/Debug/ImageFun.exe
+/home/group/personal/csharp/ImageFun/ImageFun/obj/x86/Debug/ImageFun.exe.mdb
