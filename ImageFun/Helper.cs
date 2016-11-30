@@ -3,12 +3,55 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Drawing.Imaging;
+using System.Drawing;
 
 namespace ImageFun
 {
 	public class Helper
 	{
 		public Helper (){}
+
+        //Get Color array from Bitmap
+        public Color[] GetColors(Bitmap m)
+        {
+            var colors = new Color[m.Height * m.Width];
+            int count = 0;
+
+            for(int i = 0; i < m.Height; i++)
+            {
+                for (int j = 0; j < m.Width; j++)
+                {
+                    colors[count] = m.GetPixel(i, j);
+                    count++;
+                }
+            }
+
+            return colors;
+        }
+
+        public byte[] GetImagePixelBytes(Bitmap img)
+        {
+            var colors = GetColors(img);
+            byte[] rgb = new byte[colors.Length * 3];
+            int count = 0;
+
+            for(int i = 0; i < colors.Length; i++)
+            {
+                byte r = colors[i].R; byte g = colors[i].G; byte b = colors[i].B;
+
+                rgb[count] = r; rgb[count + 1] = g; rgb[count + 2] = b;
+                count += 3;
+            }
+
+            return rgb;
+        }
+
+        public string GetFileExt(string path)
+        {
+            string text = path;
+            string[] split = path.Split('.');
+            return split[1];
+        }
 
 		public byte[] ConvertToByteArray(BitArray b)
 		{

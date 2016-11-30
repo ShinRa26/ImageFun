@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Drawing.Imaging;
 
 namespace ImageFun
 {
@@ -12,6 +13,17 @@ namespace ImageFun
 			byte[] data = File.ReadAllBytes(path);
 			return data;
 		}
+
+        public byte[] ReadImageBytes(string path)
+        {
+            var img = System.Drawing.Image.FromFile(path);
+
+            using (var stream = new MemoryStream())
+            {
+                img.Save(stream, ImageFormat.Bmp);
+                return stream.ToArray();
+            }
+        }
 
 		public int GetLSB(byte b)
 		{
