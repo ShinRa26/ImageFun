@@ -11,12 +11,15 @@ namespace ImageFun
 
 		private const string altImg = "altered.jpg"; 
 		private const string extFile = "extracted.pdf";
+
+        private const int byteSize = 8;
 		private const int maxByteSize = 254;
 		private const int sizeCompensation = 1024;
+
 		private int sizeBytes;
 
 		private byte[] imgBytes, fileBytes, extBytes, altBytes;
-		private int imgByteLength, fileByteLength, altByteLength, extByteLength;
+        private int imgByteLength, fileByteLength;
 
 		public Steg (string imgPath, string filePath)
 		{
@@ -29,7 +32,7 @@ namespace ImageFun
 		}
 
 		/*
-		 * SECTION: HIDES THE FILE IN HTE IMAGE 
+		 * SECTION: HIDES THE FILE IN THE IMAGE 
 		 * 
 		*/
 		public void HideFile()
@@ -62,7 +65,7 @@ namespace ImageFun
 				else
 					break;
 			}
-		SaveImage();
+		    //SaveImage();
 		}
 
 		private void HideFileSize()
@@ -71,37 +74,42 @@ namespace ImageFun
 			int remainder = fileByteLength % maxByteSize;
 			this.sizeBytes = sizeCompensation + quotient + 1;
 
-			for(int i = sizeCompensation; i <= sizeCompensation + quotient; i++)
-			{
-				if(i == sizeBytes)
-					imgBytes[i] = (byte)remainder;
-				else
-					imgBytes[i] = maxByteSize;
+            Console.WriteLine("Quotient: " + quotient);
+            Console.WriteLine("Remainder: " + remainder);
+            Console.WriteLine("Size Bytes: " + sizeBytes + "\nSize Compensation: " + (sizeCompensation + quotient));
 
+			for(int i = sizeCompensation; i <= sizeBytes; i++)
+			{
+                if (i == sizeBytes)
+                    imgBytes[i] = (byte)remainder;
+                else
+                    imgBytes[i] = maxByteSize;
 			}
 		}
 		/*
 		 * SECTION: END
 		 */
 
-
+        /*
+         * SECTION: EXTRACTION
+         */
 		private int ExtractFileSize()
 		{
 			int fileSize = 0;
 			this.altBytes = f.ReadFileBytes(altImg);
 
-
 			for(int i = sizeCompensation; i > -1; i++)
 			{
-				if(altBytes[i+1] != altBytes[i])
-				{
-					fileSize += altBytes[i+1];
-					break;
-				}
-				else
-					fileSize += altBytes[i];	
+                if (altBytes[i+1] != altBytes[i])
+                {
+                    fileSize += altBytes[i+1];
+                    break;
+                }
+                else
+                    fileSize += altBytes[i];
 			}
-			Console.WriteLine (fileSize);
+
+			Console.WriteLine ("Filesize: " + fileSize);
 			return fileSize;
 		}
 
@@ -121,33 +129,21 @@ namespace ImageFun
 			}
 
 			this.extBytes = ConvertToByteArray(tempBits);
-			SaveFile();
+
+			//SaveFile();
 		}
+
+
+        /*
+         * SECTION: END
+         */
+
 
 		private byte[] ConvertToByteArray(BitArray b)
 		{
-			int byteSize = 8;
 			byte[] bytes = new byte[b.Length / 8];
-			bool[] temp = new bool[byteSize];
-			int counter = 0;
-			int j = 0;
-
-			for(int i = 0; i < b.Length; i++)
-			{
-				temp[counter] = b.Get(i);
-
-				if(counter == byteSize - 1)
-				{
-					if(i >= bytes.Length)
-						break;
-					else
-					{
-						bytes[j] = ConvertBoolArrayToByte(temp);
-						counter = 0;
-						j++;
-					}
-				}
-			}
+			
+            //TODO FIX THIS SHIT
 
 			return bytes;
 		}
@@ -173,10 +169,12 @@ namespace ImageFun
 
 		private bool ConvertBitToBool(int bit)
 		{
-			if(bit == 0)
-				return false;
-			else
-				return true;
+            if (bit == 0)
+                return false;
+            else if (bit == 1)
+                return true;
+            else
+                return false;
 		}
 
 		private void SaveImage()
