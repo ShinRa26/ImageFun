@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Drawing.Imaging;
 
@@ -8,9 +9,10 @@ namespace ImageFun
 	public class Steg
 	{
 		private FileManipulation f;
+		private Helper h;
 
-		private const string altImg = "altered.jpg"; 
-		private const string extFile = "extracted.pdf";
+		private const string altImg = "altered.bmp"; 
+		private const string extFile = "extracted.txt";
 
         private const int byteSize = 8;
 		private const int maxByteSize = 254;
@@ -21,9 +23,12 @@ namespace ImageFun
 		private byte[] imgBytes, fileBytes, extBytes, altBytes;
         private int imgByteLength, fileByteLength;
 
+		//Ctor
 		public Steg (string imgPath, string filePath)
 		{
 			f = new FileManipulation();
+			h = new Helper();
+
 			imgBytes = f.ReadFileBytes(imgPath);
 			fileBytes = f.ReadFileBytes(filePath);
 
@@ -34,19 +39,20 @@ namespace ImageFun
 		/*
 		 * SECTION: HIDES THE FILE IN THE IMAGE 
 		 * 
-		*/
+		 */
 		public void HideFile()
 		{
 
 			if(fileByteLength < imgByteLength)
-				ImageLarger();
+				ConvertAndSave();
 			else
-				TooLarge();
+				Console.WriteLine ("File is too large.");
 			
 		}
 
-		private void ImageLarger()
+		private void ConvertAndSave()
 		{
+			Console.WriteLine ("Hiding File...");
 			HideFileSize();
 
 			var fileBits = new BitArray(fileBytes);
@@ -65,7 +71,8 @@ namespace ImageFun
 				else
 					break;
 			}
-		    //SaveImage();
+
+			h.SaveImage(altImg, imgBytes);
 		}
 
 		private void HideFileSize()
@@ -73,10 +80,6 @@ namespace ImageFun
 			int quotient = fileByteLength / maxByteSize;
 			int remainder = fileByteLength % maxByteSize;
 			this.sizeBytes = sizeCompensation + quotient + 1;
-
-            Console.WriteLine("Quotient: " + quotient);
-            Console.WriteLine("Remainder: " + remainder);
-            Console.WriteLine("Size Bytes: " + sizeBytes + "\nSize Compensation: " + (sizeCompensation + quotient));
 
 			for(int i = sizeCompensation; i <= sizeBytes; i++)
 			{
@@ -90,111 +93,67 @@ namespace ImageFun
 		 * SECTION: END
 		 */
 
+
+
         /*
          * SECTION: EXTRACTION
          */
-		private int ExtractFileSize()
+		private Dictionary<int,int> ExtractFileSize()
 		{
 			int fileSize = 0;
+			int counter = 0;
 			this.altBytes = f.ReadFileBytes(altImg);
+			var infoDict = new Dictionary<int, int>();
 
 			for(int i = sizeCompensation; i > -1; i++)
 			{
                 if (altBytes[i+1] != altBytes[i])
                 {
                     fileSize += altBytes[i+1];
+					counter++;
                     break;
                 }
                 else
                     fileSize += altBytes[i];
+
+				counter++;
 			}
 
-			Console.WriteLine ("Filesize: " + fileSize);
-			return fileSize;
+			infoDict[counter] = fileSize;
+			return infoDict;
 		}
 
 		public void ExtractFile()
 		{
-			int fileSize = ExtractFileSize();
+			Console.WriteLine ("Extracting file...");
 
-			int quotient = fileSize / maxByteSize;
-			int start = sizeCompensation + quotient + 1;
+			var info = ExtractFileSize();
+			int fileSize = 0;
+			int start = 0;
+
+			foreach(KeyValuePair<int, int> kvp in info)
+			{
+				fileSize = kvp.Value;
+				start = sizeCompensation + kvp.Key;
+			}
+
 			var tempBits = new BitArray(fileSize*8);
 
-			for(int i = start; i < fileSize * 8; i++)
+			for(int i = start + 1; i < fileSize * 8; i++)
 			{
 				int bit = f.GetLSB(altBytes[i]);
-				bool bitVal = ConvertBitToBool(bit);
+				bool bitVal = h.ConvertBitToBool(bit);
 				tempBits.Set(i, bitVal);
 			}
 
-			this.extBytes = ConvertToByteArray(tempBits);
+			this.extBytes = h.ConvertToByteArray(tempBits);
 
-			//SaveFile();
+			h.SaveFile(extFile,extBytes);
 		}
-
-
+			
         /*
          * SECTION: END
          */
-
-
-		private byte[] ConvertToByteArray(BitArray b)
-		{
-			byte[] bytes = new byte[b.Length / 8];
-			
-            //TODO FIX THIS SHIT
-
-			return bytes;
-		}
-
-		private byte ConvertBoolArrayToByte(bool[] source)
-		{
-			byte result = 0;
-			// This assumes the array never contains more than 8 elements!
-			int index = 8 - source.Length;
-
-			// Loop through the array
-			foreach (bool b in source)
-			{
-				// if the element is 'true' set the bit at that position
-				if (b)
-					result |= (byte)(1 << (7 - index));
-
-				index++;
-			}
-
-			return result;
-		}
-
-		private bool ConvertBitToBool(int bit)
-		{
-            if (bit == 0)
-                return false;
-            else if (bit == 1)
-                return true;
-            else
-                return false;
-		}
-
-		private void SaveImage()
-		{
-			var fs = new BinaryWriter(new FileStream(altImg, FileMode.Append, FileAccess.Write));
-			fs.Write(this.imgBytes);
-			fs.Close();
-		}
-
-		private void SaveFile()
-		{
-			var fs = new BinaryWriter(new FileStream(extFile, FileMode.Append, FileAccess.Write));
-			fs.Write(extBytes);
-			fs.Close();
-		}
-
-		private void TooLarge()
-		{
-			Console.WriteLine ("File is too large");
-		}
 	}
 }
 
