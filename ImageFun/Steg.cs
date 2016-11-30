@@ -6,22 +6,23 @@ using System.Drawing.Imaging;
 
 namespace ImageFun
 {
+    //Steg class
 	public class Steg
 	{
-		private FileManipulation f;
+		private FileManipulation f; 
 		private Helper h;
 
 		private const string altImg = "altered.bmp"; 
 		private const string extFile = "extracted.txt";
 
-        private const int byteSize = 8;
+		private const int byteSize = 8;
 		private const int maxByteSize = 254;
 		private const int sizeCompensation = 1024;
 
 		private int sizeBytes;
 
 		private byte[] imgBytes, fileBytes, extBytes, altBytes;
-        private int imgByteLength, fileByteLength;
+		private int imgByteLength, fileByteLength;
 
 		//Ctor
 		public Steg (string imgPath, string filePath)
@@ -83,10 +84,10 @@ namespace ImageFun
 
 			for(int i = sizeCompensation; i <= sizeBytes; i++)
 			{
-                if (i == sizeBytes)
-                    imgBytes[i] = (byte)remainder;
-                else
-                    imgBytes[i] = maxByteSize;
+				if (i == sizeBytes)
+					imgBytes[i] = (byte)remainder;
+				else
+					imgBytes[i] = maxByteSize;
 			}
 		}
 		/*
@@ -95,9 +96,9 @@ namespace ImageFun
 
 
 
-        /*
-         * SECTION: EXTRACTION
-         */
+		/*
+		 * SECTION: EXTRACTION
+		 */
 		private Dictionary<int,int> ExtractFileSize()
 		{
 			int fileSize = 0;
@@ -107,14 +108,14 @@ namespace ImageFun
 
 			for(int i = sizeCompensation; i > -1; i++)
 			{
-                if (altBytes[i+1] != altBytes[i])
-                {
-                    fileSize += altBytes[i+1];
+				if (altBytes[i+1] != altBytes[i])
+				{
+					fileSize += altBytes[i+1];
 					counter++;
-                    break;
-                }
-                else
-                    fileSize += altBytes[i];
+					break;
+				}
+				else
+					fileSize += altBytes[i];
 
 				counter++;
 			}
@@ -151,9 +152,9 @@ namespace ImageFun
 			h.SaveFile(extFile,extBytes);
 		}
 			
-        /*
-         * SECTION: END
-         */
+		/*
+		 * SECTION: END
+		 */
 	}
 }
 
