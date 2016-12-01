@@ -128,12 +128,10 @@ namespace ImageFun
 
 			return b;
 		}
-
-		public void SaveImage(string n, byte[] b)
+			
+		public void SaveImageBmp(string n, byte[] b)
 		{
-			var fs = new BinaryWriter(new FileStream(n, FileMode.Append, FileAccess.Write));
-			fs.Write(b);
-			fs.Close();
+			//TODO FIX
 		}
 
 		public void SaveFile(string n, byte[] b)
@@ -141,6 +139,15 @@ namespace ImageFun
 			var fs = new BinaryWriter(new FileStream(n, FileMode.Append, FileAccess.Write));
 			fs.Write(b);
 			fs.Close();
+		}
+
+		/*
+		 * TEMP SHIT
+		 */
+		public byte[] ImageToByte(Image img)
+		{
+			ImageConverter converter = new ImageConverter();
+			return (byte[])converter.ConvertTo(img, typeof(byte[]));
 		}
 	}
 }
