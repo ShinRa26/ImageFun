@@ -18,6 +18,7 @@ namespace ImageFun
         private const int header = 54;
         private const int sizeBytes = 4;
         private const int extensionBytes = 4;
+		private string filename = "extracted.";
 
         private Bitmap img;
         public byte[] imgBytes;
@@ -37,11 +38,19 @@ namespace ImageFun
             this.filePath = filePath;
 
             img = new Bitmap(imgPath);
-			imgBytes = h.ImageToByte(img);
-			
-            //imgBytes = h.GetImagePixelBytes(img);
-
+			imgBytes = h.GetImageBytes(img, header);
             fileBytes = f.ReadFileBytes(filePath);
+		}
+
+		public Steg(string imgPath)
+		{
+			f = new FileManipulation();
+			h = new Helper();
+
+			this.imgPath = imgPath;
+
+			img = new Bitmap(imgPath);
+			imgBytes = h.GetImageBytes(img, header);
 		}
 
 		/*
@@ -57,7 +66,7 @@ namespace ImageFun
             for(int i = header; i < header + extensionBytes; i++)
             {
 				if(count >= extBytes.Length)
-					imgBytes[i] = 0;
+					imgBytes[i] = 32;
 
 				else
 				{
@@ -72,16 +81,15 @@ namespace ImageFun
             int fileSize = fileBytes.Length;
 			int start = header + extensionBytes;
 			int count = 0;
-
-			byte[] fileSizeBytes = {
-				(byte)(fileSize >> 24),
-				(byte)(fileSize >> 16),
-				(byte)(fileSize >> 8),
-				(byte)(fileSize)
-			};
+			byte[] fileSizeBytes = BitConverter.GetBytes(fileSize);
+			Console.WriteLine ("FileSize Bytes: " + fileSizeBytes.Length);
 
 			for(int i = start; i < start + sizeBytes; i++)
+			{
 				imgBytes[i] = fileSizeBytes[count];
+				count++;
+			}
+			
         }
 
         public void ConvertAndSave()
@@ -90,6 +98,9 @@ namespace ImageFun
 			HideFileSize();
 
 			int start = header + extensionBytes + sizeBytes;
+
+			for(int i = header; i < start; i++)
+				Console.WriteLine (imgBytes[i]);
 
 			for(int i = start; i < imgBytes.Length; i++)
 			{
@@ -115,25 +126,84 @@ namespace ImageFun
 
 		/*
 		 * SECTION: EXTRACTION
-		 */
-		private void ExtractFileSize()
+		*/
+		public string ExtractFileExt()
 		{
-			//PH
+			string ext;
+			var extChars = new char[extensionBytes];
+			var eBytes = new byte[extensionBytes];
+			int count = 0;
+
+			for(int i = header; i < header + extensionBytes; i++)
+			{
+				if(imgBytes[i] == 0)
+				{
+					eBytes[count] = 32;
+					extChars[count] = (char)eBytes[count];
+					count++;
+				}
+				else
+				{
+					eBytes[count] = imgBytes[i];
+					extChars[count] = (char)eBytes[count];
+					count++;
+				}
+			}
+
+			ext = new string(extChars);
+			return ext;
 		}
+
+
+		private int ExtractFileSize()
+		{
+			int fileSize = 0;
+			byte[] size = new byte[sizeBytes];
+			int start = header + extensionBytes;
+			int count = 0;
+
+			for(int i = start; i < start + sizeBytes; i++)
+			{
+				size[count] = imgBytes[i];
+				count++;
+			}
+
+			fileSize = BitConverter.ToInt32(size,0);
+			return fileSize;
+		}
+
+
 
 		public void ExtractFile()
 		{
-			//PH
+			string ext = ExtractFileExt();
+			int filesize = ExtractFileSize();
+			fileBytes = new byte[filesize];
+			int start = header + extensionBytes + sizeBytes;
+			int count = 0;
+
+			for(int i = start; i < imgBytes.Length; i++)
+			{
+				if(i >= filesize)
+					break;
+				else
+				{
+					fileBytes[count] = imgBytes[i];
+					count++;
+				}
+			}
+			filename += ext;
+			h.SaveFile(filename,fileBytes);
 		}
 			
 		/*
 		 * SECTION: END
 		 */
 
-		public void ImgData()
+		public void ImgData(byte[] t)
 		{
-			for(int i = 0; i < header + 12; i++)
-				Console.Write(imgBytes[i] + ", ");
+			for(int i = 0; i < header; i++)
+				Console.WriteLine (t[i]);
 		}
 	}
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Drawing.Imaging;
 using System.Drawing;
+using System.ComponentModel;
 
 namespace ImageFun
 {
@@ -29,8 +30,22 @@ namespace ImageFun
             return colors;
         }
 
-        public byte[] GetImagePixelBytes(Bitmap img)
+		public byte[] GetImagePixelBytes(Bitmap img)
         {
+			Rectangle rect = new Rectangle(0, 0, img.Width, img.Height);
+			System.Drawing.Imaging.BitmapData bmpData = img.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, img.PixelFormat); 
+			// Get the address of the first line.
+
+			IntPtr ptr = bmpData.Scan0; 
+			// Declare an array to hold the bytes of the bitmap.  
+			int bytes = Math.Abs(bmpData.Stride) * img.Height;
+
+			byte[] rgbValues = new byte[bytes];
+			// Copy the RGB values into the array.
+			System.Runtime.InteropServices.Marshal.Copy(ptr, rgbValues, 0, bytes);
+			img.UnlockBits(bmpData);
+
+			/*
             var colors = GetColors(img);
             byte[] rgb = new byte[colors.Length * 3];
             int count = 0;
@@ -44,6 +59,8 @@ namespace ImageFun
             }
 
             return rgb;
+            */
+			return rgbValues;
         }
 
         public string GetFileExt(string path)
@@ -52,6 +69,54 @@ namespace ImageFun
             string[] split = path.Split('.');
             return split[1];
         }
+
+		public byte[] GetImageHeader(Image img, int headerSize)
+		{
+			var bmp = ImageToByte(img);
+			var header = new byte[headerSize];
+
+			for(int i = 0; i < headerSize; i++)
+				header[i] = bmp[i];
+
+			return header;
+		}
+
+		public byte[] GetImageBytes(Bitmap img, int header)
+		{
+			var rgb = GetImagePixelBytes(img);
+			var headerBytes = GetImageHeader(img, header);
+			var imgBytes = new byte[rgb.Length + headerBytes.Length];
+
+			int count = 0;
+
+			for(int i = 0; i < imgBytes.Length; i++)
+			{
+				if(i < headerBytes.Length)
+					imgBytes[i] = headerBytes[i];
+				else
+				{
+					imgBytes[i] = rgb[count];
+					count++;
+				}
+				
+			}
+
+			return imgBytes;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 		public byte[] ConvertToByteArray(BitArray b)
 		{
@@ -129,9 +194,30 @@ namespace ImageFun
 			return b;
 		}
 			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		public void SaveImageBmp(string n, byte[] b)
 		{
-			//TODO FIX
+			using(var ms = new MemoryStream(b))
+			{
+				var img = Bitmap.FromStream(ms);
+				img.RotateFlip(RotateFlipType.Rotate180FlipX);
+				img.Save(n, ImageFormat.Bmp);
+			}
 		}
 
 		public void SaveFile(string n, byte[] b)
