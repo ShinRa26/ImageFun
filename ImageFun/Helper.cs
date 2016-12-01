@@ -222,9 +222,7 @@ namespace ImageFun
 
 		public void SaveFile(string n, byte[] b)
 		{
-			var fs = new BinaryWriter(new FileStream(n, FileMode.Append, FileAccess.Write));
-			fs.Write(b);
-			fs.Close();
+			//TODO FIX
 		}
 
 		/*

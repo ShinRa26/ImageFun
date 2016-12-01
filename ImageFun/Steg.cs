@@ -22,7 +22,7 @@ namespace ImageFun
 
         private Bitmap img;
         public byte[] imgBytes;
-        private byte[] fileBytes;
+        public byte[] fileBytes;
 
         private string imgPath;
         private string filePath;
@@ -177,6 +177,9 @@ namespace ImageFun
 		public void ExtractFile()
 		{
 			string ext = ExtractFileExt();
+			string[] split = ext.Split(' ');
+			ext = split[0];
+
 			int filesize = ExtractFileSize();
 			fileBytes = new byte[filesize];
 			int start = header + extensionBytes + sizeBytes;
@@ -192,6 +195,7 @@ namespace ImageFun
 					count++;
 				}
 			}
+
 			filename += ext;
 			h.SaveFile(filename,fileBytes);
 		}
