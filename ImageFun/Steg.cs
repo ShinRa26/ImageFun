@@ -104,16 +104,17 @@ namespace ImageFun
 
 			for(int i = start; i < imgBytes.Length; i++)
 			{
-				if(i >= fileBytes.Length)
-					break;
-				
-				int fileLSB = f.GetLSB(fileBytes[i]);
-				int imgLSB = f.GetLSB(imgBytes[i]);
+                try
+                {
+                    int fileLSB = f.GetLSB(fileBytes[i]);
+                    int imgLSB = f.GetLSB(imgBytes[i]);
 
-				if(imgLSB != fileLSB)
-					f.FlipLSB(imgBytes[i]);
+                    if (imgLSB != fileLSB)
+                        f.FlipLSB(imgBytes[i]);
+                }
+                catch(Exception) { break; }
 			}
-
+            
 			h.SaveImageBmp("altered.bmp", imgBytes);
 		}
 
@@ -182,21 +183,25 @@ namespace ImageFun
 
 			int filesize = ExtractFileSize();
 			fileBytes = new byte[filesize];
+            var bits = new BitArray(filesize * 8);
+
 			int start = header + extensionBytes + sizeBytes;
-			int count = 0;
 
-			for(int i = start; i < imgBytes.Length; i++)
+            /// ***************************************************
+            /// ********************FIX****************************
+            /// ***************************************************
+			for(int i = start; i < filesize*8; i++)
 			{
-				if(i >= filesize)
-					break;
-				else
-				{
-					fileBytes[count] = imgBytes[i];
-					count++;
-				}
+                int bit = f.GetLSB(imgBytes[i]);
+                bool bitVal = h.ConvertBitToBool(bit);
+                bits.Set(i, bitVal);
 			}
-
-			filename += ext;
+            ///****************************************************
+            ///**********************FIX***************************
+            ///****************************************************
+            filename += ext;
+            fileBytes = h.ConvertToByteArray(bits);
+			
 			h.SaveFile(filename,fileBytes);
 		}
 			
