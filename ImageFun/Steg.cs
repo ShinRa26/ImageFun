@@ -197,16 +197,19 @@ namespace ImageFun
 
 			for(int i = start; i < bits.Length; i++)
 			{
-                int bit = f.GetLSB(imgBytes[i]);
-                bool bitVal = h.ConvertBitToBool(bit);
-                bits.Set(count, bitVal);
-				count++;
+				try
+				{
+                	int bit = f.GetLSB(imgBytes[i]);
+                	bool bitVal = h.ConvertBitToBool(bit);
+                	bits.Set(count, bitVal);
+					count++;
+				}
+				catch(Exception){break;}
 			}
 
             filename += ext;
 			fileBytes = h.ConvertToByteArray(bits);
 
-			Console.WriteLine (fileBytes[0]);
 			h.SaveFile(filename,fileBytes);
 		}
 			
