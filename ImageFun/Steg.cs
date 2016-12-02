@@ -57,6 +57,20 @@ namespace ImageFun
 		 * SECTION: HIDES THE FILE IN THE IMAGE 
 		 * 
 		 */
+		public void Hide()
+		{
+			if(fileBytes.Length*8 >= imgBytes.Length)
+			{
+				Console.WriteLine ("File Too Large");
+				return;
+			}
+			else
+			{
+				Console.WriteLine ("Hiding file...");
+				ConvertAndSave();
+			}
+		}
+
 		private void HideFileExt()
 		{
             string ext = h.GetFileExt(filePath);
@@ -88,10 +102,10 @@ namespace ImageFun
 				imgBytes[i] = fileSizeBytes[count];
 				count++;
 			}
-			
+
         }
 
-        public void ConvertAndSave()
+        private void ConvertAndSave()
 		{
 			HideFileExt();
 			HideFileSize();
@@ -123,6 +137,7 @@ namespace ImageFun
 			}
             
 			h.SaveImageBmp("altered.bmp", imgBytes);
+			Console.WriteLine ("Hiding successful.");
 		}
 
 		
@@ -184,6 +199,8 @@ namespace ImageFun
 
 		public void ExtractFile()
 		{
+			Console.WriteLine ("Extracting file...");
+
 			string ext = ExtractFileExt();
 			string[] split = ext.Split(' ');
 			ext = split[0];
@@ -211,6 +228,7 @@ namespace ImageFun
 			fileBytes = h.ConvertToByteArray(bits);
 
 			h.SaveFile(filename,fileBytes);
+			Console.WriteLine ("Extraction successful.");
 		}
 			
 		/*
