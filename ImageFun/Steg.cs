@@ -213,12 +213,6 @@ namespace ImageFun
 		/*
 		 * SECTION: END
 		 */
-
-		public void ImgData(byte[] t)
-		{
-			for(int i = 0; i < header; i++)
-				Console.WriteLine (t[i]);
-		}
 	}
 }
 
