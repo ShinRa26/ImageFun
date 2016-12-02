@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Drawing.Imaging;
+using System.Collections;
 
 namespace ImageFun
 {
@@ -13,17 +15,33 @@ namespace ImageFun
 			return data;
 		}
 
+        public byte[] ReadImageBytes(string path)
+        {
+            var img = System.Drawing.Image.FromFile(path);
+
+            using (var stream = new MemoryStream())
+            {
+                img.Save(stream, ImageFormat.Bmp);
+                return stream.ToArray();
+            }
+        }
+
 		public int GetLSB(byte b)
 		{
-			return b&0x01;
+			return (b&0x1);
 		}
 
-		public int FlipLSB(byte b)
+		//It's a hack, don't look at me like that...
+		public byte FlipLSB(int bit, byte b)
 		{
-			int bit = (b & 0x01);
-
-			return (b ^ bit);
+			if(bit == 0)
+				b += 1;
+			else if(bit == 1)
+				b -= 1;
+			
+			return b;
 		}
 	}
 }
 
+ 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace ImageFun
 {
@@ -6,9 +7,11 @@ namespace ImageFun
 	{
 		public static void Main (string[] args)
 		{
-			var s = new Steg("test.bmp", "review.txt");
-			//s.HideFile();
-			s.ExtractFile();
+			//var s = new Steg("test.bmp", "reviews.pdf");
+           	//s.ConvertAndSave();
+
+			var st = new Steg("altered.bmp");
+			st.ExtractFile();
 		}
 	}
 }

@@ -3,25 +3,30 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Drawing.Imaging;
+using System.Drawing;
+using System.Text;
 
 namespace ImageFun
 {
+	//Steg class
 	public class Steg
 	{
-		private FileManipulation f;
+		private FileManipulation f; 
 		private Helper h;
 
-		private const string altImg = "altered.bmp"; 
-		private const string extFile = "extracted.txt";
+		private const int byteSize = 8;
+        private const int header = 54;
+        private const int sizeBytes = 4;
+        private const int extensionBytes = 4;
+		private string filename = "extracted.";
 
-        private const int byteSize = 8;
-		private const int maxByteSize = 254;
-		private const int sizeCompensation = 1024;
+        private Bitmap img;
+        public byte[] imgBytes;
+        public byte[] fileBytes;
 
-		private int sizeBytes;
+        private string imgPath;
+        private string filePath;
 
-		private byte[] imgBytes, fileBytes, extBytes, altBytes;
-        private int imgByteLength, fileByteLength;
 
 		//Ctor
 		public Steg (string imgPath, string filePath)
@@ -29,131 +34,185 @@ namespace ImageFun
 			f = new FileManipulation();
 			h = new Helper();
 
-			imgBytes = f.ReadFileBytes(imgPath);
-			fileBytes = f.ReadFileBytes(filePath);
+            this.imgPath = imgPath;
+            this.filePath = filePath;
 
-			imgByteLength = imgBytes.Length;
-			fileByteLength = fileBytes.Length;
+            img = new Bitmap(imgPath);
+			imgBytes = h.GetImageBytes(img, header);
+            fileBytes = f.ReadFileBytes(filePath);
+		}
+
+		public Steg(string imgPath)
+		{
+			f = new FileManipulation();
+			h = new Helper();
+
+			this.imgPath = imgPath;
+
+			img = new Bitmap(imgPath);
+			imgBytes = h.GetImageBytes(img, header);
 		}
 
 		/*
 		 * SECTION: HIDES THE FILE IN THE IMAGE 
 		 * 
 		 */
-		public void HideFile()
+		private void HideFileExt()
 		{
+            string ext = h.GetFileExt(filePath);
+            var extBytes = Encoding.ASCII.GetBytes(ext);
+            int count = 0;
+            
+            for(int i = header; i < header + extensionBytes; i++)
+            {
+				if(count >= extBytes.Length)
+					imgBytes[i] = 32;
 
-			if(fileByteLength < imgByteLength)
-				ConvertAndSave();
-			else
-				Console.WriteLine ("File is too large.");
-			
+				else
+				{
+                	imgBytes[i] = extBytes[count];
+                	count++;
+				}
+            }
 		}
 
-		private void ConvertAndSave()
+        private void HideFileSize()
+        {
+            int fileSize = fileBytes.Length;
+			int start = header + extensionBytes;
+			int count = 0;
+			byte[] fileSizeBytes = BitConverter.GetBytes(fileSize);
+
+			for(int i = start; i < start + sizeBytes; i++)
+			{
+				imgBytes[i] = fileSizeBytes[count];
+				count++;
+			}
+			
+        }
+
+        public void ConvertAndSave()
 		{
-			Console.WriteLine ("Hiding File...");
+			HideFileExt();
 			HideFileSize();
 
+			int start = header + extensionBytes + sizeBytes;
+
 			var fileBits = new BitArray(fileBytes);
+			int count = 0;
 
-			for(int i = sizeBytes; i < imgByteLength; i++)
+			if(fileBits.Length != fileBytes.Length * 8)
 			{
-				if(i < fileBits.Length)
-				{
-					int imgLsb = f.GetLSB(imgBytes[i]);
-
-					int fileBit = Convert.ToInt16(fileBits[i]);
-
-					if(imgLsb != fileBit)
-						f.FlipLSB(imgBytes[i]);
-				}
-				else
-					break;
+				Console.WriteLine (string.Format("Error in bit array length. Bit Array length: {0}\tByte Array Length * 8: {1}", fileBits.Length, fileBytes.Length*8));
+				return;
 			}
 
-			h.SaveImage(altImg, imgBytes);
-		}
-
-		private void HideFileSize()
-		{
-			int quotient = fileByteLength / maxByteSize;
-			int remainder = fileByteLength % maxByteSize;
-			this.sizeBytes = sizeCompensation + quotient + 1;
-
-			for(int i = sizeCompensation; i <= sizeBytes; i++)
+			for(int i = start; i < imgBytes.Length; i++)
 			{
-                if (i == sizeBytes)
-                    imgBytes[i] = (byte)remainder;
-                else
-                    imgBytes[i] = maxByteSize;
+                try
+                {
+					int fileBit = h.ConvertBoolToBit(fileBits.Get(count));
+                    int imgLSB = f.GetLSB(imgBytes[i]);
+
+                    if (fileBit != imgLSB)
+						imgBytes[i] = f.FlipLSB(fileBit, imgBytes[i]);
+
+					count++;
+                }
+                catch(Exception) { break; }
 			}
+            
+			h.SaveImageBmp("altered.bmp", imgBytes);
 		}
+
+		
 		/*
 		 * SECTION: END
 		 */
 
 
 
-        /*
-         * SECTION: EXTRACTION
-         */
-		private Dictionary<int,int> ExtractFileSize()
+		/*
+		 * SECTION: EXTRACTION
+		*/
+		public string ExtractFileExt()
 		{
-			int fileSize = 0;
-			int counter = 0;
-			this.altBytes = f.ReadFileBytes(altImg);
-			var infoDict = new Dictionary<int, int>();
+			string ext;
+			var extChars = new char[extensionBytes];
+			var eBytes = new byte[extensionBytes];
+			int count = 0;
 
-			for(int i = sizeCompensation; i > -1; i++)
+			for(int i = header; i < header + extensionBytes; i++)
 			{
-                if (altBytes[i+1] != altBytes[i])
-                {
-                    fileSize += altBytes[i+1];
-					counter++;
-                    break;
-                }
-                else
-                    fileSize += altBytes[i];
-
-				counter++;
+				if(imgBytes[i] == 0)
+				{
+					eBytes[count] = 32;
+					extChars[count] = (char)eBytes[count];
+					count++;
+				}
+				else
+				{
+					eBytes[count] = imgBytes[i];
+					extChars[count] = (char)eBytes[count];
+					count++;
+				}
 			}
 
-			infoDict[counter] = fileSize;
-			return infoDict;
+			ext = new string(extChars);
+			return ext;
 		}
+
+
+		private int ExtractFileSize()
+		{
+			int fileSize = 0;
+			byte[] size = new byte[sizeBytes];
+			int start = header + extensionBytes;
+			int count = 0;
+
+			for(int i = start; i < start + sizeBytes; i++)
+			{
+				size[count] = imgBytes[i];
+				count++;
+			}
+
+			fileSize = BitConverter.ToInt32(size,0);
+			return fileSize;
+		}
+
+
 
 		public void ExtractFile()
 		{
-			Console.WriteLine ("Extracting file...");
+			string ext = ExtractFileExt();
+			string[] split = ext.Split(' ');
+			ext = split[0];
 
-			var info = ExtractFileSize();
-			int fileSize = 0;
-			int start = 0;
+			int filesize = ExtractFileSize();
+			fileBytes = new byte[filesize];
+            var bits = new BitArray(filesize * 8);
 
-			foreach(KeyValuePair<int, int> kvp in info)
+			int start = header + extensionBytes + sizeBytes;
+			int count = 0;
+
+			for(int i = start; i < bits.Length; i++)
 			{
-				fileSize = kvp.Value;
-				start = sizeCompensation + kvp.Key;
+                int bit = f.GetLSB(imgBytes[i]);
+                bool bitVal = h.ConvertBitToBool(bit);
+                bits.Set(count, bitVal);
+				count++;
 			}
 
-			var tempBits = new BitArray(fileSize*8);
+            filename += ext;
+			fileBytes = h.ConvertToByteArray(bits);
 
-			for(int i = start + 1; i < fileSize * 8; i++)
-			{
-				int bit = f.GetLSB(altBytes[i]);
-				bool bitVal = h.ConvertBitToBool(bit);
-				tempBits.Set(i, bitVal);
-			}
-
-			this.extBytes = h.ConvertToByteArray(tempBits);
-
-			h.SaveFile(extFile,extBytes);
+			Console.WriteLine (fileBytes[0]);
+			h.SaveFile(filename,fileBytes);
 		}
 			
-        /*
-         * SECTION: END
-         */
+		/*
+		 * SECTION: END
+		 */
 	}
 }
 
