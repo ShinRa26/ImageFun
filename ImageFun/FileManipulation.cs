@@ -31,7 +31,7 @@ namespace ImageFun
 			return (b&0x1);
 		}
 
-		//Horrible Hack
+		//It's a hack, don't look at me like that...
 		public byte FlipLSB(int bit, byte b)
 		{
 			if(bit == 0)
