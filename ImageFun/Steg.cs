@@ -82,7 +82,6 @@ namespace ImageFun
 			int start = header + extensionBytes;
 			int count = 0;
 			byte[] fileSizeBytes = BitConverter.GetBytes(fileSize);
-			Console.WriteLine ("FileSize Bytes: " + fileSizeBytes.Length);
 
 			for(int i = start; i < start + sizeBytes; i++)
 			{
@@ -99,18 +98,26 @@ namespace ImageFun
 
 			int start = header + extensionBytes + sizeBytes;
 
-			for(int i = header; i < start; i++)
-				Console.WriteLine (imgBytes[i]);
+			var fileBits = new BitArray(fileBytes);
+			int count = 0;
+
+			if(fileBits.Length != fileBytes.Length * 8)
+			{
+				Console.WriteLine (string.Format("Error in bit array length. Bit Array length: {0}\tByte Array Length * 8: {1}", fileBits.Length, fileBytes.Length*8));
+				return;
+			}
 
 			for(int i = start; i < imgBytes.Length; i++)
 			{
                 try
                 {
-                    int fileLSB = f.GetLSB(fileBytes[i]);
+					int fileBit = h.ConvertBoolToBit(fileBits.Get(count));
                     int imgLSB = f.GetLSB(imgBytes[i]);
 
-                    if (imgLSB != fileLSB)
-                        f.FlipLSB(imgBytes[i]);
+                    if (fileBit != imgLSB)
+						imgBytes[i] = f.FlipLSB(fileBit, imgBytes[i]);
+
+					count++;
                 }
                 catch(Exception) { break; }
 			}
@@ -186,22 +193,20 @@ namespace ImageFun
             var bits = new BitArray(filesize * 8);
 
 			int start = header + extensionBytes + sizeBytes;
+			int count = 0;
 
-            /// ***************************************************
-            /// ********************FIX****************************
-            /// ***************************************************
-			for(int i = start; i < filesize*8; i++)
+			for(int i = start; i < bits.Length; i++)
 			{
                 int bit = f.GetLSB(imgBytes[i]);
                 bool bitVal = h.ConvertBitToBool(bit);
-                bits.Set(i, bitVal);
+                bits.Set(count, bitVal);
+				count++;
 			}
-            ///****************************************************
-            ///**********************FIX***************************
-            ///****************************************************
+
             filename += ext;
-            fileBytes = h.ConvertToByteArray(bits);
-			
+			fileBytes = h.ConvertToByteArray(bits);
+
+			Console.WriteLine (fileBytes[0]);
 			h.SaveFile(filename,fileBytes);
 		}
 			

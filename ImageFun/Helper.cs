@@ -155,7 +155,7 @@ namespace ImageFun
 				return false;
 		}
 
-		private int ConvertBoolToBit(bool b)
+		public int ConvertBoolToBit(bool b)
 		{
 			if(b)
 				return 1;
@@ -208,7 +208,7 @@ namespace ImageFun
 
 		public void SaveFile(string n, byte[] b)
 		{
-            File.WriteAllBytes(@n, b);
+			File.WriteAllBytes(n,b); 
 		}
 
 		/*

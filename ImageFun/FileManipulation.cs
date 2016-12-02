@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Drawing.Imaging;
+using System.Collections;
 
 namespace ImageFun
 {
@@ -27,15 +28,20 @@ namespace ImageFun
 
 		public int GetLSB(byte b)
 		{
-			return b&0x01;
+			return (b&0x1);
 		}
 
-		public int FlipLSB(byte b)
+		//Horrible Hack
+		public byte FlipLSB(int bit, byte b)
 		{
-			int bit = (b & 0x01);
-
-			return (b ^ bit);
+			if(bit == 0)
+				b += 1;
+			else if(bit == 1)
+				b -= 1;
+			
+			return b;
 		}
 	}
 }
 
+ 
